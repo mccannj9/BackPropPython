@@ -55,8 +55,6 @@ class Multiply(Gate):
 class Add(Gate):
 
     def __init__(self, *args, **kwargs):
-        # super(self, *args, **kwargs)
-        # super.__init__(self, *args, **kwargs)
         super().__init__(*args, **kwargs)
 
     def forward(self, input_1, input_2):
@@ -151,6 +149,7 @@ def main():
     z = add_gate_1.forward(ax_by, c)
     s = sig_gate_0.forward(z)
     print(s)
+
 
 if __name__ == "__main__":
     main()
