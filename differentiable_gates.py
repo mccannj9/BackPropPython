@@ -1,15 +1,16 @@
 #! /usr/bin/env python3
 
-import math
+import numpy as np
+
+EPS = 1e-8
 
 
 def sigmoid(x):
-    return 1/(1 + math.exp(-x))
+    return 1/(1 + np.exp(-x))
 
 
 def cross_entropy(x, y):
-    eps = 1e-8
-    return y * math.log(x+eps) + (1 - y) * math.log(1-x+eps)
+    return -(y * np.log(x + EPS) + (1 - y) * np.log(1 - x + EPS))
 
 
 def zeros_initializer(shape=(1,)):
@@ -34,10 +35,14 @@ class Unit(object):
     def __str__(self):
         return f"V: {self.value} - G: {self.gradient}"
 
+    def __neg__(self):
+        self.value = -self.value
+        return self.value
+
 
 class Gate(object):
 
-    def __init__(self, name):
+    def __init__(self, name="Gate"):
         self.name = name
 
     def forward(self, input_1, input_2):
@@ -52,6 +57,20 @@ class Gate(object):
 
     def __str__(self):
         return f"{self.utop.value}"
+
+
+class MultiplyConstant(Gate):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def forward(self, input_1, constant):
+        self.unit_0 = input_1
+        self.constant = constant
+        self.utop = Unit(input_1.value * constant, 0.0)
+        return self.utop
+
+    def backward(self):
+        self.unit_0.gradient += self.constant * self.utop.gradient
 
 
 class Multiply(Gate):
@@ -84,6 +103,25 @@ class Add(Gate):
     def backward(self):
         self.unit_0.gradient += 1.0 * self.utop.gradient
         self.unit_1.gradient += 1.0 * self.utop.gradient
+
+
+class Power(Gate):
+
+    def __init__(self, p=1, k=1, *args, **kwargs):
+        # f(x) = a*(x^p)
+        self.k = k
+        self.p = p
+        super().__init__(*args, **kwargs)
+
+    def forward(self, input_1):
+        self.unit_0 = input_1
+        self.utop = Unit(self.k * np.power(input_1.value, self.p), 0.0)
+        return self.utop
+
+    def backward(self):
+        x = self.k * self.p * np.power(self.unit_0.value, self.p-1)
+        # print(x)
+        self.unit_0.gradient += x * self.utop.gradient
 
 
 class Sigmoid(Gate):
@@ -122,8 +160,10 @@ def main():
     a = Unit(1.0, 0.0)
     b = Unit(2.0, 0.0)
     c = Unit(-3.0, 0.0)
-    x = Unit(-1.0, 0.0)
-    y = Unit(3.0, 0.0)
+    # x = Unit(-1.0, 0.0)
+    # y = Unit(3.0, 0.0)
+    x = -1.0
+    y = 3.0
 
     label = 1
 
@@ -136,8 +176,8 @@ def main():
     # Create the gates for function:
     # f(z) = sigmoid(z), z = ax + by + c
 
-    mult_gate_0 = Multiply("a*x")
-    mult_gate_1 = Multiply("b*y")
+    mult_gate_0 = MultiplyConstant("a*x")
+    mult_gate_1 = MultiplyConstant("b*y")
 
     add_gate_0 = Add("a*x + b*y")
     add_gate_1 = Add("(a*x + b*y) + c")
@@ -154,8 +194,7 @@ def main():
 
     step_size = 0.01
 
-    for i in range(0, 1000):
-
+    for i in range(0, 100):
         ce.gradient = 1.0
         xent_gate_0.backward(label)
         sig_gate_0.backward()
@@ -167,15 +206,15 @@ def main():
         a.value += step_size * a.gradient
         b.value += step_size * b.gradient
         c.value += step_size * c.gradient
-        x.value += step_size * x.gradient
-        y.value += step_size * y.gradient
+        # x.value += step_size * x.gradient
+        # y.value += step_size * y.gradient
 
         print("")
         print(a)
         print(b)
         print(c)
-        print(x)
-        print(y)
+        # print(x)
+        # print(y)
         print("")
 
         print(s, ce)
