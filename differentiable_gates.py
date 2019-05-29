@@ -17,6 +17,20 @@ def zeros_initializer(shape=(1,)):
     pass
 
 
+class Graph(object):
+
+    def __init__(self, inputs, list_of_gates, name="Default"):
+        self.inputs = inputs
+        self.gates = list_of_gates
+        self.outputs = []
+
+    def forward(self, inputs):
+        pass
+
+    def backward(self):
+        pass
+
+
 class Initializer(object):
 
     def __init__(self, function):
