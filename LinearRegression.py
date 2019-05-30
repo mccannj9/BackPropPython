@@ -51,31 +51,37 @@ b.gradient = 0.0
 m.gradient = 0.0
 y.gradient = 0.0
 
-for i in range(0, 100):
-    x.value, y.value = data[np.random.choice(data.shape[0])]
+batch_size = 16
+num_iters = 1000
 
-    # feed forward
-    mx = mult_gate_0.forward(m, x)
-    mx_b = add_gate_0.forward(mx, b)
-    mx_b_y = add_gate_1.forward(mx_b, y)
-    mx_b_y_2 = power_gate_0.forward(mx_b_y)
+for i in range(0, num_iters):
+    m_gradients, b_gradients = 0, 0
+    for j in range(0, batch_size):
+        x.value, y.value = data[np.random.choice(data.shape[0])]
 
-    # back propagate gradients
-    mx_b_y_2.gradient = 1.0
-    power_gate_0.backward()
-    add_gate_1.backward()
-    add_gate_0.backward()
-    mult_gate_0.backward()
+        # feed forward
+        mx = mult_gate_0.forward(m, x)
+        mx_b = add_gate_0.forward(mx, b)
+        mx_b_y = add_gate_1.forward(mx_b, y)
+        mx_b_y_2 = power_gate_0.forward(mx_b_y)
+
+        # back propagate gradients
+        mx_b_y_2.gradient = 1.0
+        power_gate_0.backward()
+        add_gate_1.backward()
+        add_gate_0.backward()
+        mult_gate_0.backward()
+
+        m_gradients += step_size * m.gradient
+        b_gradients += step_size * b.gradient
+
+        # reset gradients
+        x.gradient = 0.0
+        b.gradient = 0.0
+        m.gradient = 0.0
+        y.gradient = 0.0
 
     # apply gradient updates to parameters
-    m.value += step_size * m.gradient
-    b.value += step_size * b.gradient
-    print(f"[Epoch {i+1}] {m.value} {b.value}")
-    # print("m=", m.value)
-    # print("b=", b.valu)
-
-    # reset gradients
-    x.gradient = 0.0
-    b.gradient = 0.0
-    m.gradient = 0.0
-    y.gradient = 0.0
+    m.value += m_gradients / batch_size
+    b.value += b_gradients / batch_size
+    print(f"[Epoch {i+1}] {m.value} {b.value} {mx_b_y_2.value}")
